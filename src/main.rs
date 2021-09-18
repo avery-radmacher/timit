@@ -127,7 +127,7 @@ fn parse_args(args: Vec<String>) -> Result<Args, &'static str> {
 }
 
 fn main() {
-    let args: Vec<_> = std::env::args().skip(1).collect();
+    let args = std::env::args().skip(1).collect();
     match parse_args(args) {
         Err(msg) => eprintln!("Error: {}", msg),
         Ok(args) => run(args),
