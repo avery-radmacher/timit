@@ -46,15 +46,11 @@ fn observe_process(args: &Args) -> (bool, Result<Duration, &str>) {
     let start_time = Instant::now();
     let mut child = match command.spawn() {
         Ok(child) => child,
-        Err(_) => {
-            return (true, Err("Could not spawn timed process"));
-        }
+        Err(_) => return (true, Err("Could not spawn timed process")),
     };
     let success = match child.wait() {
         Ok(status) => status.success(),
-        Err(_) => {
-            return (true, Err("Could not collect timed process exit status"));
-        }
+        Err(_) => return (true, Err("Could not collect timed process exit status")),
     };
     let end_time = Instant::now();
 
