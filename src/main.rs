@@ -1,5 +1,18 @@
-use std::process::{Command, Stdio};
+use std::process::{Command, ExitStatus, Stdio};
 use std::time::{Duration, Instant};
+
+fn exit_status_to_string(status: ExitStatus) -> String {
+    let code = match status.code() {
+        Some(code) => format!("{}", code),
+        None => String::from("signal"),
+    };
+    let explanation = if status.success() {
+        "success"
+    } else {
+        "failure"
+    };
+    format!("{} ({})", code, explanation)
+}
 
 fn duration_to_string(duration: MsgResult<Duration>, pretty: bool) -> String {
     if let Err(msg) = duration {
@@ -51,14 +64,14 @@ fn observe_process(args: &Args) -> MsgResult<ProcessResults> {
         Ok(child) => child,
         Err(_) => return Err("Could not spawn timed process"),
     };
-    let success = match child.wait() {
-        Ok(status) => status.success(),
+    let exit_status = match child.wait() {
+        Ok(status) => status,
         Err(_) => return Err("Could not collect timed process exit status"),
     };
     let end_time = Instant::now();
 
     Ok(ProcessResults {
-        success,
+        exit_status,
         duration: end_time
             .checked_duration_since(start_time)
             .ok_or("There was an error timing the operation."),
@@ -69,11 +82,7 @@ fn print_results(args: &Args, results: ProcessResults) {
     println!("Results:");
     println!(
         "  Exit status: {}",
-        if results.success {
-            "Success"
-        } else {
-            "Failure"
-        }
+        exit_status_to_string(results.exit_status)
     );
     println!(
         "  Duration: {}",
@@ -101,7 +110,7 @@ struct Args {
 }
 
 struct ProcessResults<'a> {
-    success: bool,
+    exit_status: ExitStatus,
     duration: MsgResult<'a, Duration>,
 }
 
