@@ -1,8 +1,24 @@
-use std::process::{Command, Stdio};
+use std::process::{Command, ExitStatus, Stdio};
 use std::time::{Duration, Instant};
 
-fn duration_to_string(duration: Duration, pretty: bool) -> String {
-    let total_nanos = duration.as_nanos();
+fn exit_status_to_string(status: ExitStatus) -> String {
+    let code = match status.code() {
+        Some(code) => format!("{}", code),
+        None => String::from("signal"),
+    };
+    let explanation = if status.success() {
+        "success"
+    } else {
+        "failure"
+    };
+    format!("{} ({})", code, explanation)
+}
+
+fn duration_to_string(duration: MsgResult<Duration>, pretty: bool) -> String {
+    if let Err(msg) = duration {
+        return String::from(msg);
+    }
+    let total_nanos = duration.unwrap().as_nanos();
     if pretty {
         let hours = if total_nanos >= 3_600_000_000_000 {
             format!("{:02}:", total_nanos / 3_600_000_000_000)
@@ -34,7 +50,7 @@ fn initialize(args: &Args) {
     println!("Command: {}", command);
 }
 
-fn observe_process(args: &Args) -> (bool, Result<Duration, &str>) {
+fn observe_process(args: &Args) -> MsgResult<ProcessResults> {
     let mut command = Command::new(&args.command);
     command.args(&args.command_args);
     if !args.borrow_stdio {
@@ -46,27 +62,31 @@ fn observe_process(args: &Args) -> (bool, Result<Duration, &str>) {
     let start_time = Instant::now();
     let mut child = match command.spawn() {
         Ok(child) => child,
-        Err(_) => return (true, Err("Could not spawn timed process")),
+        Err(_) => return Err("Could not spawn timed process"),
     };
-    let success = match child.wait() {
-        Ok(status) => status.success(),
-        Err(_) => return (true, Err("Could not collect timed process exit status")),
+    let exit_status = match child.wait() {
+        Ok(status) => status,
+        Err(_) => return Err("Could not collect timed process exit status"),
     };
     let end_time = Instant::now();
 
-    (
-        success,
-        end_time
+    Ok(ProcessResults {
+        exit_status,
+        duration: end_time
             .checked_duration_since(start_time)
             .ok_or("There was an error timing the operation."),
-    )
+    })
 }
 
-fn print_results(args: &Args, duration: Duration) {
+fn print_results(args: &Args, results: ProcessResults) {
     println!("Results:");
     println!(
+        "  Exit status: {}",
+        exit_status_to_string(results.exit_status)
+    );
+    println!(
         "  Duration: {}",
-        duration_to_string(duration, !args.display_nanos)
+        duration_to_string(results.duration, !args.display_nanos)
     );
     println!();
 }
@@ -74,13 +94,10 @@ fn print_results(args: &Args, duration: Duration) {
 fn run(args: Args) {
     initialize(&args);
     println!("-- Begin program output --");
-    let (success, duration_result) = observe_process(&args);
+    let results = observe_process(&args);
     println!("--- End program output ---");
-    if !success {
-        println!("Note: Process exit status indicated failure");
-    }
-    match duration_result {
-        Ok(duration) => print_results(&args, duration),
+    match results {
+        Ok(results) => print_results(&args, results),
         Err(reason) => println!("Error: {}", reason),
     }
 }
@@ -92,7 +109,14 @@ struct Args {
     command_args: Vec<String>,
 }
 
-fn parse_args(args: Vec<String>) -> Result<Args, &'static str> {
+struct ProcessResults<'a> {
+    exit_status: ExitStatus,
+    duration: MsgResult<'a, Duration>,
+}
+
+type MsgResult<'a, T> = Result<T, &'a str>;
+
+fn parse_args(args: Vec<String>) -> MsgResult<'static, Args> {
     let mut iter = args.into_iter();
     let mut display_nanos = false;
     let mut borrow_stdio = true;
@@ -129,7 +153,7 @@ fn parse_args(args: Vec<String>) -> Result<Args, &'static str> {
 fn main() {
     let args = std::env::args().skip(1).collect();
     match parse_args(args) {
-        Err(msg) => eprintln!("Error: {}", msg),
+        Err(msg) => println!("Error: {}", msg),
         Ok(args) => run(args),
     };
 }
