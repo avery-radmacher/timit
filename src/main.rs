@@ -1,8 +1,11 @@
 use std::process::{Command, Stdio};
 use std::time::{Duration, Instant};
 
-fn duration_to_string(duration: Duration, pretty: bool) -> String {
-    let total_nanos = duration.as_nanos();
+fn duration_to_string(duration: Result<Duration, &str>, pretty: bool) -> String {
+    if let Err(msg) = duration {
+        return String::from(msg);
+    }
+    let total_nanos = duration.unwrap().as_nanos();
     if pretty {
         let hours = if total_nanos >= 3_600_000_000_000 {
             format!("{:02}:", total_nanos / 3_600_000_000_000)
@@ -34,7 +37,7 @@ fn initialize(args: &Args) {
     println!("Command: {}", command);
 }
 
-fn observe_process(args: &Args) -> (bool, Result<Duration, &str>) {
+fn observe_process(args: &Args) -> Result<ProcessResults, &str> {
     let mut command = Command::new(&args.command);
     command.args(&args.command_args);
     if !args.borrow_stdio {
@@ -46,27 +49,35 @@ fn observe_process(args: &Args) -> (bool, Result<Duration, &str>) {
     let start_time = Instant::now();
     let mut child = match command.spawn() {
         Ok(child) => child,
-        Err(_) => return (true, Err("Could not spawn timed process")),
+        Err(_) => return Err("Could not spawn timed process"),
     };
     let success = match child.wait() {
         Ok(status) => status.success(),
-        Err(_) => return (true, Err("Could not collect timed process exit status")),
+        Err(_) => return Err("Could not collect timed process exit status"),
     };
     let end_time = Instant::now();
 
-    (
+    Ok(ProcessResults {
         success,
-        end_time
+        duration: end_time
             .checked_duration_since(start_time)
             .ok_or("There was an error timing the operation."),
-    )
+    })
 }
 
-fn print_results(args: &Args, duration: Duration) {
+fn print_results(args: &Args, results: ProcessResults) {
     println!("Results:");
     println!(
+        "  Exit status: {}",
+        if results.success {
+            "Success"
+        } else {
+            "Failure"
+        }
+    );
+    println!(
         "  Duration: {}",
-        duration_to_string(duration, !args.display_nanos)
+        duration_to_string(results.duration, !args.display_nanos)
     );
     println!();
 }
@@ -74,13 +85,10 @@ fn print_results(args: &Args, duration: Duration) {
 fn run(args: Args) {
     initialize(&args);
     println!("-- Begin program output --");
-    let (success, duration_result) = observe_process(&args);
+    let results = observe_process(&args);
     println!("--- End program output ---");
-    if !success {
-        println!("Note: Process exit status indicated failure");
-    }
-    match duration_result {
-        Ok(duration) => print_results(&args, duration),
+    match results {
+        Ok(results) => print_results(&args, results),
         Err(reason) => println!("Error: {}", reason),
     }
 }
@@ -90,6 +98,11 @@ struct Args {
     borrow_stdio: bool,
     command: String,
     command_args: Vec<String>,
+}
+
+struct ProcessResults<'a> {
+    success: bool,
+    duration: Result<Duration, &'a str>,
 }
 
 fn parse_args(args: Vec<String>) -> Result<Args, &'static str> {
