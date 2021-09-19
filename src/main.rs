@@ -1,7 +1,7 @@
 use std::process::{Command, Stdio};
 use std::time::{Duration, Instant};
 
-fn duration_to_string(duration: Result<Duration, &str>, pretty: bool) -> String {
+fn duration_to_string(duration: MsgResult<Duration>, pretty: bool) -> String {
     if let Err(msg) = duration {
         return String::from(msg);
     }
@@ -37,7 +37,7 @@ fn initialize(args: &Args) {
     println!("Command: {}", command);
 }
 
-fn observe_process(args: &Args) -> Result<ProcessResults, &str> {
+fn observe_process(args: &Args) -> MsgResult<ProcessResults> {
     let mut command = Command::new(&args.command);
     command.args(&args.command_args);
     if !args.borrow_stdio {
@@ -102,10 +102,12 @@ struct Args {
 
 struct ProcessResults<'a> {
     success: bool,
-    duration: Result<Duration, &'a str>,
+    duration: MsgResult<'a, Duration>,
 }
 
-fn parse_args(args: Vec<String>) -> Result<Args, &'static str> {
+type MsgResult<'a, T> = Result<T, &'a str>;
+
+fn parse_args(args: Vec<String>) -> MsgResult<'static, Args> {
     let mut iter = args.into_iter();
     let mut display_nanos = false;
     let mut borrow_stdio = true;
