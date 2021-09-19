@@ -1,3 +1,4 @@
+use domain_types::*;
 use std::process::{Command, ExitStatus, Stdio};
 use std::time::{Duration, Instant};
 
@@ -42,42 +43,6 @@ fn duration_to_string(duration: MsgResult<Duration>, pretty: bool) -> String {
     }
 }
 
-fn initialize(args: &Args) {
-    let mut command = format!("timit {}", args.command);
-    for arg in &args.command_args {
-        command.push_str(&format!(" {}", arg));
-    }
-    println!("Command: {}", command);
-}
-
-fn observe_process(args: &Args) -> MsgResult<ProcessResults> {
-    let mut command = Command::new(&args.command);
-    command.args(&args.command_args);
-    if !args.borrow_stdio {
-        command
-            .stdout(Stdio::null())
-            .stderr(Stdio::null())
-            .stdin(Stdio::null());
-    }
-    let start_time = Instant::now();
-    let mut child = match command.spawn() {
-        Ok(child) => child,
-        Err(_) => return Err("Could not spawn timed process"),
-    };
-    let exit_status = match child.wait() {
-        Ok(status) => status,
-        Err(_) => return Err("Could not collect timed process exit status"),
-    };
-    let end_time = Instant::now();
-
-    Ok(ProcessResults {
-        exit_status,
-        duration: end_time
-            .checked_duration_since(start_time)
-            .ok_or("There was an error timing the operation."),
-    })
-}
-
 fn print_results(args: &Args, results: ProcessResults) {
     println!("Results:");
     println!(
@@ -91,30 +56,75 @@ fn print_results(args: &Args, results: ProcessResults) {
     println!();
 }
 
-fn run(args: Args) {
-    initialize(&args);
-    println!("-- Begin program output --");
-    let results = observe_process(&args);
-    println!("--- End program output ---");
-    match results {
-        Ok(results) => print_results(&args, results),
-        Err(reason) => println!("Error: {}", reason),
+fn initialize(args: &Args) {
+    let mut command = format!("timit {}", args.command);
+    for arg in &args.command_args {
+        command.push_str(&format!(" {}", arg));
+    }
+    println!("Command: {}", command);
+}
+
+pub mod core {
+    use super::*;
+
+    fn observe_process(args: &Args) -> MsgResult<ProcessResults> {
+        let mut command = Command::new(&args.command);
+        command.args(&args.command_args);
+        if !args.borrow_stdio {
+            command
+                .stdout(Stdio::null())
+                .stderr(Stdio::null())
+                .stdin(Stdio::null());
+        }
+        let start_time = Instant::now();
+        let mut child = match command.spawn() {
+            Ok(child) => child,
+            Err(_) => return Err("Could not spawn timed process"),
+        };
+        let exit_status = match child.wait() {
+            Ok(status) => status,
+            Err(_) => return Err("Could not collect timed process exit status"),
+        };
+        let end_time = Instant::now();
+
+        Ok(ProcessResults {
+            exit_status,
+            duration: end_time
+                .checked_duration_since(start_time)
+                .ok_or("There was an error timing the operation."),
+        })
+    }
+
+    pub fn run(args: Args) {
+        initialize(&args);
+        println!("-- Begin program output --");
+        let results = observe_process(&args);
+        println!("--- End program output ---");
+        match results {
+            Ok(results) => print_results(&args, results),
+            Err(reason) => println!("Error: {}", reason),
+        }
     }
 }
 
-struct Args {
-    display_nanos: bool,
-    borrow_stdio: bool,
-    command: String,
-    command_args: Vec<String>,
-}
+pub mod domain_types {
+    use std::process::ExitStatus;
+    use std::time::Duration;
 
-struct ProcessResults<'a> {
-    exit_status: ExitStatus,
-    duration: MsgResult<'a, Duration>,
-}
+    pub struct Args {
+        pub display_nanos: bool,
+        pub borrow_stdio: bool,
+        pub command: String,
+        pub command_args: Vec<String>,
+    }
 
-type MsgResult<'a, T> = Result<T, &'a str>;
+    pub struct ProcessResults<'a> {
+        pub exit_status: ExitStatus,
+        pub duration: MsgResult<'a, Duration>,
+    }
+
+    pub type MsgResult<'a, T> = Result<T, &'a str>;
+}
 
 fn parse_args(args: Vec<String>) -> MsgResult<'static, Args> {
     let mut iter = args.into_iter();
@@ -154,6 +164,6 @@ fn main() {
     let args = std::env::args().skip(1).collect();
     match parse_args(args) {
         Err(msg) => println!("Error: {}", msg),
-        Ok(args) => run(args),
+        Ok(args) => core::run(args),
     };
 }
