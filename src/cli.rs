@@ -1,5 +1,4 @@
-use crate::core;
-use crate::domain_types::*;
+use crate::core::{self, types::*};
 use std::process::ExitStatus;
 use std::time::Duration;
 

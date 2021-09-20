@@ -1,7 +1,7 @@
-
-use crate::domain_types::*;
+pub mod types;
 use std::process::{Command, Stdio};
 use std::time::Instant;
+use types::*;
 
 pub fn observe_process(args: &Args) -> MsgResult<ProcessResults> {
     let mut command = Command::new(&args.command);
