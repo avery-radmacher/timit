@@ -36,6 +36,38 @@ pub fn parse_args(args: Vec<String>) -> MsgResult<'static, Args> {
     }
 }
 
+pub fn run(args: Args) {
+    initialize(&args);
+    println!("-- Begin program output --");
+    let results = core::observe_process(&args);
+    println!("--- End program output ---");
+    match results {
+        Ok(results) => print_results(&args, results),
+        Err(reason) => println!("Error: {}", reason),
+    }
+}
+
+fn initialize(args: &Args) {
+    let mut command = format!("timit {}", args.command);
+    for arg in &args.command_args {
+        command.push_str(&format!(" {}", arg));
+    }
+    println!("Command: {}", command);
+}
+
+fn print_results(args: &Args, results: ProcessResults) {
+    println!("Results:");
+    println!(
+        "  Exit status: {}",
+        exit_status_to_string(results.exit_status)
+    );
+    println!(
+        "  Duration: {}",
+        duration_to_string(results.duration, !args.display_nanos)
+    );
+    println!();
+}
+
 fn exit_status_to_string(status: ExitStatus) -> String {
     let code = match status.code() {
         Some(code) => format!("{}", code),
@@ -74,37 +106,5 @@ fn duration_to_string(duration: MsgResult<Duration>, pretty: bool) -> String {
         format!("{}{}{}.{}s", hours, minutes, seconds, nanos)
     } else {
         format!("{}ns", total_nanos)
-    }
-}
-
-fn print_results(args: &Args, results: ProcessResults) {
-    println!("Results:");
-    println!(
-        "  Exit status: {}",
-        exit_status_to_string(results.exit_status)
-    );
-    println!(
-        "  Duration: {}",
-        duration_to_string(results.duration, !args.display_nanos)
-    );
-    println!();
-}
-
-fn initialize(args: &Args) {
-    let mut command = format!("timit {}", args.command);
-    for arg in &args.command_args {
-        command.push_str(&format!(" {}", arg));
-    }
-    println!("Command: {}", command);
-}
-
-pub fn run(args: Args) {
-    initialize(&args);
-    println!("-- Begin program output --");
-    let results = core::observe_process(&args);
-    println!("--- End program output ---");
-    match results {
-        Ok(results) => print_results(&args, results),
-        Err(reason) => println!("Error: {}", reason),
     }
 }
