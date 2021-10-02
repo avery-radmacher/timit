@@ -1,42 +1,42 @@
 use crate::core::{self, types::*};
 use std::process::ExitStatus;
 use std::time::Duration;
+use structopt::StructOpt;
 
-pub fn parse_args(args: Vec<String>) -> MsgResult<'static, Args> {
-    let mut iter = args.into_iter();
-    let mut display_nanos = false;
-    let mut borrow_stdio = true;
-    let mut command = None;
-    loop {
-        let arg = match iter.next() {
-            None => break,
-            Some(arg) => arg,
-        };
-        if arg == String::from("--nanos") {
-            display_nanos = true;
-        } else if arg == String::from("--hide-stdio") {
-            borrow_stdio = false;
-        } else if arg == String::from("--prog") {
-            command = iter.next();
-            break;
-        } else {
-            command = Some(arg);
-            break;
+#[derive(StructOpt)]
+#[structopt(
+    name = "timit",
+    about = "A simple program execution reporter",
+    setting = structopt::clap::AppSettings::TrailingVarArg,
+)]
+struct CLIArgs {
+    /// Display execution time as integer nanos instead of prettified
+    #[structopt(short, long)]
+    nanos: bool,
+
+    /// Don't share terminal stdio with spawned process
+    #[structopt(short, long)]
+    hide_stdio: bool,
+
+    /// The command to spawn followed by its arguments
+    #[structopt(required = true)]
+    command: Vec<String>,
+}
+
+impl CLIArgs {
+    pub fn to_args(self) -> Args {
+        let mut command_iter = self.command.into_iter();
+        Args {
+            display_nanos: self.nanos,
+            borrow_stdio: !self.hide_stdio,
+            command: command_iter.next().unwrap(), // failsafe due to #[structopt(required = true)]
+            command_args: command_iter.collect(),
         }
-    }
-    let command_args = iter.collect();
-    match command {
-        None => Err("No command specified"),
-        Some(command) => Ok(Args {
-            display_nanos,
-            borrow_stdio,
-            command,
-            command_args,
-        }),
     }
 }
 
-pub fn run(args: Args) {
+pub fn run() {
+    let args = CLIArgs::from_args().to_args();
     initialize(&args);
     println!("-- Begin program output --");
     let results = core::observe_process(&args);
