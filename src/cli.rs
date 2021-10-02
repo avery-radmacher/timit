@@ -4,30 +4,32 @@ use std::time::Duration;
 use structopt::StructOpt;
 
 #[derive(StructOpt)]
-#[structopt(name = "timit", about = "A simple program execution reporter")]
+#[structopt(
+    name = "timit",
+    about = "A simple program execution reporter",
+    setting = structopt::clap::AppSettings::TrailingVarArg,
+)]
 struct CLIArgs {
     /// Display execution time as integer nanos instead of prettified
     #[structopt(short, long)]
-    pub nanos: bool,
+    nanos: bool,
 
     /// Don't share terminal stdio with spawned process
     #[structopt(short, long)]
-    pub hide_stdio: bool,
+    hide_stdio: bool,
 
-    /// The command to spawn
-    pub command: String,
-
-    /// The arguments to pass the command
-    pub args: Vec<String>,
+    /// The command to spawn followed by its arguments
+    command: Vec<String>,
 }
 
 impl CLIArgs {
     pub fn to_args(self) -> Args {
+        let mut command_iter = self.command.into_iter();
         Args {
             display_nanos: self.nanos,
             borrow_stdio: !self.hide_stdio,
-            command: self.command,
-            command_args: self.args,
+            command: command_iter.next().unwrap(),
+            command_args: command_iter.collect(),
         }
     }
 }
