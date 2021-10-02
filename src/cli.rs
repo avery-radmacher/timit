@@ -19,6 +19,7 @@ struct CLIArgs {
     hide_stdio: bool,
 
     /// The command to spawn followed by its arguments
+    #[structopt(required = true)]
     command: Vec<String>,
 }
 
@@ -28,7 +29,7 @@ impl CLIArgs {
         Args {
             display_nanos: self.nanos,
             borrow_stdio: !self.hide_stdio,
-            command: command_iter.next().unwrap(),
+            command: command_iter.next().unwrap(), // failsafe due to #[structopt(required = true)]
             command_args: command_iter.collect(),
         }
     }
