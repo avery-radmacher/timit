@@ -1,4 +1,5 @@
 use crate::core::{self, types::*};
+use std::io::Write;
 use std::process::ExitStatus;
 use std::time::Duration;
 use structopt::StructOpt;
@@ -35,37 +36,40 @@ impl CLIArgs {
     }
 }
 
-pub fn run() {
+pub fn run(writer: &mut impl Write) {
     let args = CLIArgs::from_args().to_args();
-    initialize(&args);
-    println!("-- Begin program output --");
+    initialize(&args, writer);
+    writeln!(writer, "-- Begin program output --");
+    writer.flush();
     let results = core::observe_process(&args);
-    println!("--- End program output ---");
+    writeln!(writer, "--- End program output ---");
     match results {
-        Ok(results) => print_results(&args, results),
-        Err(reason) => println!("Error: {}", reason),
+        Ok(results) => print_results(&args, results, writer),
+        Err(reason) => {writeln!(writer, "Error: {}", reason);},
     }
 }
 
-fn initialize(args: &Args) {
+fn initialize(args: &Args, writer: &mut impl Write) {
     let mut command = format!("timit {}", args.command);
     for arg in &args.command_args {
         command.push_str(&format!(" {}", arg));
     }
-    println!("Command: {}", command);
+    writeln!(writer, "Command: {}", command);
 }
 
-fn print_results(args: &Args, results: ProcessResults) {
-    println!("Results:");
-    println!(
+fn print_results(args: &Args, results: ProcessResults, writer: &mut impl Write) {
+    writeln!(writer, "Results:");
+    writeln!(
+        writer,
         "  Exit status: {}",
         exit_status_to_string(results.exit_status)
     );
-    println!(
+    writeln!(
+        writer,
         "  Duration: {}",
         duration_to_string(results.duration, !args.display_nanos)
     );
-    println!();
+    writeln!(writer);
 }
 
 fn exit_status_to_string(status: ExitStatus) -> String {
