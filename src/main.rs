@@ -3,6 +3,6 @@ mod core;
 
 use std::io;
 
-fn main() {
-    cli::run(&mut io::BufWriter::new(io::stdout()));
+fn main() -> io::Result<()> {
+    cli::run(&mut io::BufWriter::new(io::stdout()))
 }
