@@ -1,8 +1,8 @@
 mod cli;
 mod core;
 
-use std::io;
+use std::io::{self, BufWriter};
 
 fn main() -> io::Result<()> {
-    cli::run(&mut io::BufWriter::new(io::stdout()))
+    cli::run(&mut BufWriter::new(io::stdout()))
 }
