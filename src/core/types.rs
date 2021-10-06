@@ -1,4 +1,4 @@
-use std::fs;
+use std::fs::File;
 use std::process::ExitStatus;
 use std::time::Duration;
 
@@ -7,9 +7,15 @@ pub struct Args {
     pub borrow_stdio: bool,
     pub command: String,
     pub command_args: Vec<String>,
-    pub stdin: Option<fs::File>,
-    pub stdout: Option<fs::File>,
-    pub stderr: Option<fs::File>,
+    pub stdin: Option<File>,
+    pub stdout: Option<File>,
+    pub stderr: Option<File>,
+}
+
+pub struct IOArgs {
+    pub stdin: Option<File>,
+    pub stdout: Option<File>,
+    pub stderr: Option<File>,
 }
 
 pub struct ProcessResults<'a> {
