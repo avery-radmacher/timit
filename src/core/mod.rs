@@ -30,3 +30,11 @@ pub fn observe_process(args: &Args) -> MsgResult<ProcessResults> {
             .ok_or("There was an error timing the operation."),
     })
 }
+
+fn stream_or_null(file: Option<std::fs::File>) -> Stdio {
+    if let Some(file) = file {
+        Stdio::from(file)
+    } else {
+        Stdio::null()
+    }
+}
