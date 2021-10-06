@@ -1,3 +1,4 @@
+use std::fs;
 use std::process::ExitStatus;
 use std::time::Duration;
 
@@ -6,6 +7,9 @@ pub struct Args {
     pub borrow_stdio: bool,
     pub command: String,
     pub command_args: Vec<String>,
+    pub stdin: Option<fs::File>,
+    pub stdout: Option<fs::File>,
+    pub stderr: Option<fs::File>,
 }
 
 pub struct ProcessResults<'a> {

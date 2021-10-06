@@ -1,4 +1,5 @@
 use crate::core::{self, types::*};
+use std::fs::File;
 use std::io::{self, Write};
 use std::process::ExitStatus;
 use std::time::Duration;
@@ -37,19 +38,34 @@ struct CLIArgs {
 }
 
 impl CLIArgs {
-    pub fn to_args(self) -> Args {
+    pub fn to_args(self) -> io::Result<Args> {
+        let stdin = self
+            .stdin
+            .and_then(|name| Some(File::open(name)))
+            .transpose()?;
+        let stdout = self
+            .stdout
+            .and_then(|name| Some(File::create(name)))
+            .transpose()?;
+        let stderr = self
+            .stderr
+            .and_then(|name| Some(File::create(name)))
+            .transpose()?;
         let mut command_iter = self.command.into_iter();
-        Args {
+        Ok(Args {
             display_nanos: self.nanos,
             borrow_stdio: !self.hide_stdio,
             command: command_iter.next().unwrap(), // failsafe due to #[structopt(required = true)]
             command_args: command_iter.collect(),
-        }
+            stdin,
+            stdout,
+            stderr,
+        })
     }
 }
 
 pub fn run(writer: &mut impl Write) -> io::Result<()> {
-    let args = CLIArgs::from_args().to_args();
+    let args = CLIArgs::from_args().to_args()?;
     initialize(&args, writer)?;
     if args.borrow_stdio {
         writeln!(writer, "-- Begin program output --")?;
