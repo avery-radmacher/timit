@@ -19,6 +19,18 @@ struct CLIArgs {
     #[structopt(short, long)]
     hide_stdio: bool,
 
+    /// Set stdin for the spawned process
+    #[structopt(short = "i", long)]
+    stdin: Option<String>,
+
+    /// Set stdout for the spawned process
+    #[structopt(short = "o", long)]
+    stdout: Option<String>,
+
+    /// Set stderr for the spawned process
+    #[structopt(short = "e", long)]
+    stderr: Option<String>,
+
     /// The command to spawn followed by its arguments
     #[structopt(required = true)]
     command: Vec<String>,
@@ -39,10 +51,14 @@ impl CLIArgs {
 pub fn run(writer: &mut impl Write) -> io::Result<()> {
     let args = CLIArgs::from_args().to_args();
     initialize(&args, writer)?;
-    writeln!(writer, "-- Begin program output --")?;
+    if args.borrow_stdio {
+        writeln!(writer, "-- Begin program output --")?;
+    }
     writer.flush()?;
     let results = core::observe_process(&args);
-    writeln!(writer, "--- End program output ---")?;
+    if args.borrow_stdio {
+        writeln!(writer, "--- End program output ---")?;
+    }
     match results {
         Ok(results) => print_results(&args, results, writer),
         Err(reason) => writeln!(writer, "Error: {}", reason),
