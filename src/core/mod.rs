@@ -3,15 +3,13 @@ use std::process::{Command, Stdio};
 use std::time::Instant;
 use types::*;
 
-pub fn observe_process(args: &Args) -> MsgResult<ProcessResults> {
+pub fn observe_process(args: &Args, io: IOArgs) -> MsgResult<ProcessResults> {
     let mut command = Command::new(&args.command);
-    command.args(&args.command_args);
-    if !args.borrow_stdio {
-        command
-            .stdout(Stdio::null())
-            .stderr(Stdio::null())
-            .stdin(Stdio::null());
-    }
+    command
+        .args(&args.command_args)
+        .stdout(stream_or_null(io.stdout))
+        .stderr(stream_or_null(io.stderr))
+        .stdin(stream_or_null(io.stdin));
     let start_time = Instant::now();
     let mut child = match command.spawn() {
         Ok(child) => child,
@@ -29,4 +27,11 @@ pub fn observe_process(args: &Args) -> MsgResult<ProcessResults> {
             .checked_duration_since(start_time)
             .ok_or("There was an error timing the operation."),
     })
+}
+
+fn stream_or_null(file: Option<std::fs::File>) -> Stdio {
+    match file {
+        Some(file) => Stdio::from(file),
+        None => Stdio::inherit(),
+    }
 }

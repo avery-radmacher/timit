@@ -1,4 +1,5 @@
 use crate::core::{self, types::*};
+use std::fs::File;
 use std::io::{self, Write};
 use std::process::ExitStatus;
 use std::time::Duration;
@@ -15,9 +16,17 @@ struct CLIArgs {
     #[structopt(short, long)]
     nanos: bool,
 
-    /// Don't share terminal stdio with spawned process
-    #[structopt(short, long)]
-    hide_stdio: bool,
+    /// Set stdin for the spawned process
+    #[structopt(short = "i", long)]
+    stdin: Option<String>,
+
+    /// Set stdout for the spawned process
+    #[structopt(short = "o", long)]
+    stdout: Option<String>,
+
+    /// Set stderr for the spawned process
+    #[structopt(short = "e", long)]
+    stderr: Option<String>,
 
     /// The command to spawn followed by its arguments
     #[structopt(required = true)]
@@ -25,23 +34,42 @@ struct CLIArgs {
 }
 
 impl CLIArgs {
-    pub fn to_args(self) -> Args {
+    pub fn to_args(self) -> io::Result<(Args, IOArgs)> {
+        let stdin = self
+            .stdin
+            .and_then(|name| Some(File::open(name)))
+            .transpose()?;
+        let stdout = self
+            .stdout
+            .and_then(|name| Some(File::create(name)))
+            .transpose()?;
+        let stderr = self
+            .stderr
+            .and_then(|name| Some(File::create(name)))
+            .transpose()?;
         let mut command_iter = self.command.into_iter();
-        Args {
-            display_nanos: self.nanos,
-            borrow_stdio: !self.hide_stdio,
-            command: command_iter.next().unwrap(), // failsafe due to #[structopt(required = true)]
-            command_args: command_iter.collect(),
-        }
+        Ok((
+            Args {
+                display_nanos: self.nanos,
+                borrow_stdio: true,
+                command: command_iter.next().unwrap(), // failsafe due to #[structopt(required = true)]
+                command_args: command_iter.collect(),
+            },
+            IOArgs {
+                stdin,
+                stdout,
+                stderr,
+            },
+        ))
     }
 }
 
 pub fn run(writer: &mut impl Write) -> io::Result<()> {
-    let args = CLIArgs::from_args().to_args();
+    let (args, io_args) = CLIArgs::from_args().to_args()?;
     initialize(&args, writer)?;
     writeln!(writer, "-- Begin program output --")?;
     writer.flush()?;
-    let results = core::observe_process(&args);
+    let results = core::observe_process(&args, io_args);
     writeln!(writer, "--- End program output ---")?;
     match results {
         Ok(results) => print_results(&args, results, writer),
