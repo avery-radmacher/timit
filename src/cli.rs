@@ -67,14 +67,10 @@ impl CLIArgs {
 pub fn run(writer: &mut impl Write) -> io::Result<()> {
     let (args, io_args) = CLIArgs::from_args().to_args()?;
     initialize(&args, writer)?;
-    if args.borrow_stdio {
-        writeln!(writer, "-- Begin program output --")?;
-    }
+    writeln!(writer, "-- Begin program output --")?;
     writer.flush()?;
     let results = core::observe_process(&args, io_args);
-    if args.borrow_stdio {
-        writeln!(writer, "--- End program output ---")?;
-    }
+    writeln!(writer, "--- End program output ---")?;
     match results {
         Ok(results) => print_results(&args, results, writer),
         Err(reason) => writeln!(writer, "Error: {}", reason),
