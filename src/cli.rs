@@ -38,7 +38,7 @@ struct CLIArgs {
 }
 
 impl CLIArgs {
-    pub fn to_args(self) -> io::Result<Args> {
+    pub fn to_args(self) -> io::Result<(Args, IOArgs)> {
         let stdin = self
             .stdin
             .and_then(|name| Some(File::open(name)))
@@ -52,26 +52,30 @@ impl CLIArgs {
             .and_then(|name| Some(File::create(name)))
             .transpose()?;
         let mut command_iter = self.command.into_iter();
-        Ok(Args {
-            display_nanos: self.nanos,
-            borrow_stdio: !self.hide_stdio,
-            command: command_iter.next().unwrap(), // failsafe due to #[structopt(required = true)]
-            command_args: command_iter.collect(),
-            stdin,
-            stdout,
-            stderr,
-        })
+        Ok((
+            Args {
+                display_nanos: self.nanos,
+                borrow_stdio: !self.hide_stdio,
+                command: command_iter.next().unwrap(), // failsafe due to #[structopt(required = true)]
+                command_args: command_iter.collect(),
+            },
+            IOArgs {
+                stdin,
+                stdout,
+                stderr,
+            },
+        ))
     }
 }
 
 pub fn run(writer: &mut impl Write) -> io::Result<()> {
-    let args = CLIArgs::from_args().to_args()?;
+    let (args, io_args) = CLIArgs::from_args().to_args()?;
     initialize(&args, writer)?;
     if args.borrow_stdio {
         writeln!(writer, "-- Begin program output --")?;
     }
     writer.flush()?;
-    let results = core::observe_process(&args);
+    let results = core::observe_process(&args, io_args);
     if args.borrow_stdio {
         writeln!(writer, "--- End program output ---")?;
     }

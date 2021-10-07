@@ -7,9 +7,6 @@ pub struct Args {
     pub borrow_stdio: bool,
     pub command: String,
     pub command_args: Vec<String>,
-    pub stdin: Option<File>,
-    pub stdout: Option<File>,
-    pub stderr: Option<File>,
 }
 
 pub struct IOArgs {
