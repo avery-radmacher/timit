@@ -30,9 +30,8 @@ pub fn observe_process(args: &Args, io: IOArgs) -> MsgResult<ProcessResults> {
 }
 
 fn stream_or_null(file: Option<std::fs::File>) -> Stdio {
-    if let Some(file) = file {
-        Stdio::from(file)
-    } else {
-        Stdio::null()
+    match file {
+        Some(file) => Stdio::from(file),
+        None => Stdio::inherit(),
     }
 }
