@@ -1,4 +1,5 @@
 use std::fs::File;
+use std::io;
 use std::process::ExitStatus;
 use std::time::Duration;
 
@@ -19,6 +20,13 @@ pub struct IOArgs {
 pub struct ProcessResults<'a> {
     pub exit_status: ExitStatus,
     pub duration: MsgResult<'a, Duration>,
+}
+
+pub enum Error {
+    IO(io::Error),
+    NotSpawned,
+    NotJoined,
+    Timing,
 }
 
 pub type MsgResult<'a, T> = Result<T, &'a str>;
