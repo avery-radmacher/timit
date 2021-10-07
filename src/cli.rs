@@ -48,17 +48,19 @@ impl CLIArgs {
             .and_then(|name| Some(File::create(name)))
             .transpose()?;
         let mut command_iter = self.command.into_iter();
-        Ok((Args {
-            display_nanos: self.nanos,
-            borrow_stdio: true,
-            command: command_iter.next().unwrap(), // failsafe due to #[structopt(required = true)]
-            command_args: command_iter.collect(),
-        },
-    IOArgs{
-        stdin,
-        stdout,
-        stderr,
-    }))
+        Ok((
+            Args {
+                display_nanos: self.nanos,
+                borrow_stdio: true,
+                command: command_iter.next().unwrap(), // failsafe due to #[structopt(required = true)]
+                command_args: command_iter.collect(),
+            },
+            IOArgs {
+                stdin,
+                stdout,
+                stderr,
+            },
+        ))
     }
 }
 
