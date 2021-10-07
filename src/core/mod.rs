@@ -34,3 +34,13 @@ fn stream_or_null(file: Option<std::fs::File>) -> Stdio {
         None => Stdio::inherit(),
     }
 }
+
+impl std::fmt::Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let reason = match self {
+            Error::NotSpawned => String::from("Could not spawn timed process"),
+            Error::NotJoined => String::from("Could not collect timed process exit status"),
+        };
+        write!(f, "{}", reason)
+    }
+}
