@@ -1,5 +1,4 @@
 use std::fs::File;
-use std::io;
 use std::process::ExitStatus;
 use std::time::Duration;
 
@@ -37,4 +36,4 @@ impl std::fmt::Display for Error {
     }
 }
 
-pub type Rsult<T> = Result<T, Error>;
+pub type Result<T> = std::result::Result<T, Error>;

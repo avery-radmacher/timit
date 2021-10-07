@@ -3,7 +3,7 @@ use std::process::{Command, Stdio};
 use std::time::Instant;
 use types::*;
 
-pub fn observe_process(args: &Args, io: IOArgs) -> Rsult<ProcessResults> {
+pub fn observe_process(args: &Args, io: IOArgs) -> Result<ProcessResults> {
     let mut command = Command::new(&args.command);
     command
         .args(&args.command_args)
