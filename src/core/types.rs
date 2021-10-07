@@ -16,9 +16,14 @@ pub struct IOArgs {
     pub stderr: Option<File>,
 }
 
-pub struct ProcessResults<'a> {
+pub struct ProcessData {
     pub exit_status: ExitStatus,
-    pub duration: MsgResult<'a, Duration>,
+    pub duration: Option<Duration>,
 }
 
-pub type MsgResult<'a, T> = Result<T, &'a str>;
+pub enum Error {
+    NotSpawned,
+    NotJoined,
+}
+
+pub type Result<T> = std::result::Result<T, Error>;
