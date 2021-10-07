@@ -85,7 +85,7 @@ fn initialize(args: &Args, writer: &mut impl Write) -> io::Result<()> {
     writeln!(writer, "Command: {}", command)
 }
 
-fn print_results(args: &Args, results: ProcessResults, writer: &mut impl Write) -> io::Result<()> {
+fn print_results(args: &Args, results: ProcessData, writer: &mut impl Write) -> io::Result<()> {
     writeln!(writer, "Results:")?;
     writeln!(
         writer,

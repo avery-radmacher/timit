@@ -3,7 +3,7 @@ use std::process::{Command, Stdio};
 use std::time::Instant;
 use types::*;
 
-pub fn observe_process(args: &Args, io: IOArgs) -> Result<ProcessResults> {
+pub fn observe_process(args: &Args, io: IOArgs) -> Result<ProcessData> {
     let mut command = Command::new(&args.command);
     command
         .args(&args.command_args)
@@ -21,7 +21,7 @@ pub fn observe_process(args: &Args, io: IOArgs) -> Result<ProcessResults> {
     };
     let end_time = Instant::now();
 
-    Ok(ProcessResults {
+    Ok(ProcessData {
         exit_status,
         duration: end_time
             .checked_duration_since(start_time),

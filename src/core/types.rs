@@ -16,7 +16,7 @@ pub struct IOArgs {
     pub stderr: Option<File>,
 }
 
-pub struct ProcessResults {
+pub struct ProcessData {
     pub exit_status: ExitStatus,
     pub duration: Option<Duration>,
 }
