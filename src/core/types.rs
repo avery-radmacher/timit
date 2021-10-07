@@ -4,6 +4,7 @@ use std::time::Duration;
 
 pub struct Args {
     pub display_nanos: bool,
+    /// Ignored for now
     pub borrow_stdio: bool,
     pub command: String,
     pub command_args: Vec<String>,

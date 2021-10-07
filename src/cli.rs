@@ -16,10 +16,6 @@ struct CLIArgs {
     #[structopt(short, long)]
     nanos: bool,
 
-    /// Don't share terminal stdio with spawned process
-    #[structopt(short, long)]
-    hide_stdio: bool,
-
     /// Set stdin for the spawned process
     #[structopt(short = "i", long)]
     stdin: Option<String>,
@@ -52,19 +48,17 @@ impl CLIArgs {
             .and_then(|name| Some(File::create(name)))
             .transpose()?;
         let mut command_iter = self.command.into_iter();
-        Ok((
-            Args {
-                display_nanos: self.nanos,
-                borrow_stdio: !self.hide_stdio,
-                command: command_iter.next().unwrap(), // failsafe due to #[structopt(required = true)]
-                command_args: command_iter.collect(),
-            },
-            IOArgs {
-                stdin,
-                stdout,
-                stderr,
-            },
-        ))
+        Ok((Args {
+            display_nanos: self.nanos,
+            borrow_stdio: true,
+            command: command_iter.next().unwrap(), // failsafe due to #[structopt(required = true)]
+            command_args: command_iter.collect(),
+        },
+    IOArgs{
+        stdin,
+        stdout,
+        stderr,
+    }))
     }
 }
 
