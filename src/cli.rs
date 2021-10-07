@@ -113,9 +113,9 @@ fn exit_status_to_string(status: ExitStatus) -> String {
     format!("{} ({})", code, explanation)
 }
 
-fn duration_to_string(duration: MsgResult<Duration>, pretty: bool) -> String {
-    if let Err(msg) = duration {
-        return String::from(msg);
+fn duration_to_string(duration: Option<Duration>, pretty: bool) -> String {
+    if let None = duration {
+        return String::from("There was an error timing the operation.");
     }
     let total_nanos = duration.unwrap().as_nanos();
     if pretty {

@@ -3,7 +3,7 @@ use std::process::{Command, Stdio};
 use std::time::Instant;
 use types::*;
 
-pub fn observe_process(args: &Args, io: IOArgs) -> MsgResult<ProcessResults> {
+pub fn observe_process(args: &Args, io: IOArgs) -> Rsult<ProcessResults> {
     let mut command = Command::new(&args.command);
     command
         .args(&args.command_args)
@@ -13,19 +13,18 @@ pub fn observe_process(args: &Args, io: IOArgs) -> MsgResult<ProcessResults> {
     let start_time = Instant::now();
     let mut child = match command.spawn() {
         Ok(child) => child,
-        Err(_) => return Err("Could not spawn timed process"),
+        Err(_) => return Err(Error::NotSpawned),
     };
     let exit_status = match child.wait() {
         Ok(status) => status,
-        Err(_) => return Err("Could not collect timed process exit status"),
+        Err(_) => return Err(Error::NotJoined),
     };
     let end_time = Instant::now();
 
     Ok(ProcessResults {
         exit_status,
         duration: end_time
-            .checked_duration_since(start_time)
-            .ok_or("There was an error timing the operation."),
+            .checked_duration_since(start_time),
     })
 }
 

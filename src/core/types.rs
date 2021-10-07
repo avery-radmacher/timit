@@ -17,16 +17,24 @@ pub struct IOArgs {
     pub stderr: Option<File>,
 }
 
-pub struct ProcessResults<'a> {
+pub struct ProcessResults {
     pub exit_status: ExitStatus,
-    pub duration: MsgResult<'a, Duration>,
+    pub duration: Option<Duration>,
 }
 
 pub enum Error {
-    IO(io::Error),
     NotSpawned,
     NotJoined,
-    Timing,
 }
 
-pub type MsgResult<'a, T> = Result<T, &'a str>;
+impl std::fmt::Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let reason = match self {
+            Error::NotSpawned => String::from("Could not spawn timed process"),
+            Error::NotJoined => String::from("Could not collect timed process exit status"),
+        };
+        write!(f, "{}", reason)
+    }
+}
+
+pub type Rsult<T> = Result<T, Error>;
