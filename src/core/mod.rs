@@ -23,8 +23,7 @@ pub fn observe_process(args: &Args, io: IOArgs) -> Result<ProcessData> {
 
     Ok(ProcessData {
         exit_status,
-        duration: end_time
-            .checked_duration_since(start_time),
+        duration: end_time.checked_duration_since(start_time),
     })
 }
 
