@@ -4,12 +4,7 @@ use std::time::Instant;
 use types::*;
 
 pub fn observe_process(args: &Args, io: IOArgs) -> Result<ProcessData> {
-    let mut command = Command::new(&args.command);
-    command
-        .args(&args.command_args)
-        .stdout(stream_or_null(io.stdout))
-        .stderr(stream_or_null(io.stderr))
-        .stdin(stream_or_null(io.stdin));
+    let mut command = build_command(args, io);
     let start_time = Instant::now();
     let mut child = match command.spawn() {
         Ok(child) => child,
@@ -25,6 +20,16 @@ pub fn observe_process(args: &Args, io: IOArgs) -> Result<ProcessData> {
         exit_status,
         duration: end_time.checked_duration_since(start_time),
     })
+}
+
+fn build_command(args: &Args, io: IOArgs) -> Command {
+    let mut command = Command::new(&args.command);
+    command
+        .args(&args.command_args)
+        .stdout(stream_or_null(io.stdout))
+        .stderr(stream_or_null(io.stderr))
+        .stdin(stream_or_null(io.stdin));
+    command
 }
 
 fn stream_or_null(file: Option<std::fs::File>) -> Stdio {
