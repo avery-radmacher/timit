@@ -6,14 +6,8 @@ use types::*;
 pub fn observe_process(args: &Args, io: IOArgs) -> Result<ProcessData> {
     let mut command = build_command(args, io);
     let start_time = Instant::now();
-    let mut child = match command.spawn() {
-        Ok(child) => child,
-        Err(_) => return Err(Error::NotSpawned),
-    };
-    let exit_status = match child.wait() {
-        Ok(status) => status,
-        Err(_) => return Err(Error::NotJoined),
-    };
+    let mut child = command.spawn().or(Err(Error::NotSpawned))?;
+    let exit_status = child.wait().or(Err(Error::NotJoined))?;
     let end_time = Instant::now();
 
     Ok(ProcessData {
