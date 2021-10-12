@@ -11,9 +11,15 @@ pub struct Args {
 }
 
 pub struct IOArgs {
-    pub stdin: Option<File>,
-    pub stdout: Option<File>,
-    pub stderr: Option<File>,
+    pub stdin: IOStream,
+    pub stdout: IOStream,
+    pub stderr: IOStream,
+}
+
+pub enum IOStream {
+    Null,
+    Inherit,
+    File(File),
 }
 
 pub struct ProcessData {

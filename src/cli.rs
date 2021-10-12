@@ -34,19 +34,29 @@ struct CLIArgs {
 }
 
 impl CLIArgs {
+    fn to_io_stream(
+        inherit: bool,
+        file: Option<String>,
+        is_for_stdin: bool,
+    ) -> io::Result<IOStream> {
+        if inherit {
+            Ok(IOStream::Inherit)
+        } else if let Some(file) = file {
+            let stream = if is_for_stdin {
+                File::open(file)?
+            } else {
+                File::create(file)?
+            };
+            Ok(IOStream::File(stream))
+        } else {
+            Ok(IOStream::Null)
+        }
+    }
+
     pub fn to_args(self) -> io::Result<(Args, IOArgs)> {
-        let stdin = self
-            .stdin
-            .and_then(|name| Some(File::open(name)))
-            .transpose()?;
-        let stdout = self
-            .stdout
-            .and_then(|name| Some(File::create(name)))
-            .transpose()?;
-        let stderr = self
-            .stderr
-            .and_then(|name| Some(File::create(name)))
-            .transpose()?;
+        let stdin = CLIArgs::to_io_stream(false, self.stdin, true)?;
+        let stdout = CLIArgs::to_io_stream(false, self.stdout, false)?;
+        let stderr = CLIArgs::to_io_stream(false, self.stderr, false)?;
         let mut command_iter = self.command.into_iter();
         Ok((
             Args {

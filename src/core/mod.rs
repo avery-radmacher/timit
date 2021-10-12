@@ -26,10 +26,11 @@ fn build_command(args: &Args, io: IOArgs) -> Command {
     command
 }
 
-fn stream_or_null(file: Option<std::fs::File>) -> Stdio {
-    match file {
-        Some(file) => Stdio::from(file),
-        None => Stdio::inherit(),
+fn stream_or_null(stream: IOStream) -> Stdio {
+    match stream {
+        Null => Stdio::null(),
+        Inherit => Stdio::inherit(),
+        IOStream::File(file) => Stdio::from(file),
     }
 }
 
