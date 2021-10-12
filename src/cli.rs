@@ -54,6 +54,7 @@ impl CLIArgs {
     }
 
     pub fn to_args(self) -> io::Result<(Args, IOArgs)> {
+        // TODO remove hardcoded false for inherit
         let stdin = CLIArgs::to_io_stream(false, self.stdin, true)?;
         let stdout = CLIArgs::to_io_stream(false, self.stdout, false)?;
         let stderr = CLIArgs::to_io_stream(false, self.stderr, false)?;
