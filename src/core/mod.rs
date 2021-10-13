@@ -28,8 +28,8 @@ fn build_command(args: &Args, io: IOArgs) -> Command {
 
 fn stream_or_null(stream: IOStream) -> Stdio {
     match stream {
-        Null => Stdio::null(),
-        Inherit => Stdio::inherit(),
+        IOStream::Null => Stdio::null(),
+        IOStream::Inherit => Stdio::inherit(),
         IOStream::File(file) => Stdio::from(file),
     }
 }
