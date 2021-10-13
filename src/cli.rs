@@ -17,28 +17,16 @@ struct CLIArgs {
     nanos: bool,
 
     /// Set stdin for the spawned process
-    #[structopt(short = "i", long, conflicts_with_all(&["stdin_null", "stdin_inherit"]))]
+    #[structopt(short = "i", long, conflicts_with = "stdin_inherit")]
     stdin: Option<String>,
 
     /// Set stdout for the spawned process
-    #[structopt(short = "o", long, conflicts_with_all(&["stdout_null", "stdout_inherit"]))]
+    #[structopt(short = "o", long, conflicts_with = "stdout_inherit")]
     stdout: Option<String>,
 
     /// Set stderr for the spawned process
-    #[structopt(short = "e", long, conflicts_with_all(&["stderr_null", "stderr_inherit"]))]
+    #[structopt(short = "e", long, conflicts_with = "stderr_inherit")]
     stderr: Option<String>,
-
-    /// Set stdin to null
-    #[structopt(long, conflicts_with = "stdin_inherit")]
-    stdin_null: bool,
-
-    /// Set stdout to null
-    #[structopt(long, conflicts_with = "stdout_inherit")]
-    stdout_null: bool,
-
-    /// Set stderr to null
-    #[structopt(long, conflicts_with = "stderr_inherit")]
-    stderr_null: bool,
 
     /// Inherit stdin from the current process
     #[structopt(long)]
