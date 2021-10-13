@@ -17,28 +17,28 @@ struct CLIArgs {
     nanos: bool,
 
     /// Set stdin for the spawned process
-    #[structopt(short = "i", long, conflicts_with = "stdin_inherit")]
+    #[structopt(short = "i", long, conflicts_with = "stdin_null")]
     stdin: Option<String>,
 
     /// Set stdout for the spawned process
-    #[structopt(short = "o", long, conflicts_with = "stdout_inherit")]
+    #[structopt(short = "o", long, conflicts_with = "stdout_null")]
     stdout: Option<String>,
 
     /// Set stderr for the spawned process
-    #[structopt(short = "e", long, conflicts_with = "stderr_inherit")]
+    #[structopt(short = "e", long, conflicts_with = "stderr_null")]
     stderr: Option<String>,
 
-    /// Inherit stdin from the current process
+    /// Set stdin to null
     #[structopt(long)]
-    stdin_inherit: bool,
+    stdin_null: bool,
 
-    /// Inherit stdout from the current process
+    /// Set stdout to null
     #[structopt(long)]
-    stdout_inherit: bool,
+    stdout_null: bool,
 
-    /// Inherit stderr from the current process
+    /// Set stderr to null
     #[structopt(long)]
-    stderr_inherit: bool,
+    stderr_null: bool,
 
     /// The command to spawn followed by its arguments
     #[structopt(required = true)]
@@ -46,13 +46,9 @@ struct CLIArgs {
 }
 
 impl CLIArgs {
-    fn to_io_stream(
-        inherit: bool,
-        file: Option<String>,
-        is_for_stdin: bool,
-    ) -> io::Result<IOStream> {
-        if inherit {
-            Ok(IOStream::Inherit)
+    fn to_io_stream(null: bool, file: Option<String>, is_for_stdin: bool) -> io::Result<IOStream> {
+        if null {
+            Ok(IOStream::Null)
         } else if let Some(file) = file {
             let stream = if is_for_stdin {
                 File::open(file)?
@@ -61,14 +57,14 @@ impl CLIArgs {
             };
             Ok(IOStream::File(stream))
         } else {
-            Ok(IOStream::Null)
+            Ok(IOStream::Inherit)
         }
     }
 
     pub fn to_args(self) -> io::Result<(Args, IOArgs)> {
-        let stdin = CLIArgs::to_io_stream(self.stdin_inherit, self.stdin, true)?;
-        let stdout = CLIArgs::to_io_stream(self.stdout_inherit, self.stdout, false)?;
-        let stderr = CLIArgs::to_io_stream(self.stderr_inherit, self.stderr, false)?;
+        let stdin = CLIArgs::to_io_stream(self.stdin_null, self.stdin, true)?;
+        let stdout = CLIArgs::to_io_stream(self.stdout_null, self.stdout, false)?;
+        let stderr = CLIArgs::to_io_stream(self.stderr_null, self.stderr, false)?;
         let mut command_iter = self.command.into_iter();
         Ok((
             Args {
