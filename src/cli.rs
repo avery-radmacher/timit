@@ -78,10 +78,9 @@ impl CLIArgs {
     }
 
     pub fn to_args(self) -> io::Result<(Args, IOArgs)> {
-        // TODO remove hardcoded false for inherit
-        let stdin = CLIArgs::to_io_stream(false, self.stdin, true)?;
-        let stdout = CLIArgs::to_io_stream(false, self.stdout, false)?;
-        let stderr = CLIArgs::to_io_stream(false, self.stderr, false)?;
+        let stdin = CLIArgs::to_io_stream(self.stdin_inherit, self.stdin, true)?;
+        let stdout = CLIArgs::to_io_stream(self.stdout_inherit, self.stdout, false)?;
+        let stderr = CLIArgs::to_io_stream(self.stderr_inherit, self.stderr, false)?;
         let mut command_iter = self.command.into_iter();
         Ok((
             Args {
