@@ -28,6 +28,30 @@ struct CLIArgs {
     #[structopt(short = "e", long)]
     stderr: Option<String>,
 
+    /// Set stdin to null
+    #[structopt(long)]
+    stdin_null: bool,
+
+    /// Set stdout to null
+    #[structopt(long)]
+    stdout_null: bool,
+
+    /// Set stderr to null
+    #[structopt(long)]
+    stderr_null: bool,
+
+    /// Inherit stdin from the current process
+    #[structopt(long)]
+    stdin_inherit: bool,
+
+    /// Inherit stdout from the current process
+    #[structopt(long)]
+    stdout_inherit: bool,
+
+    /// Inherit stderr from the current process
+    #[structopt(long)]
+    stderr_inherit: bool,
+
     /// The command to spawn followed by its arguments
     #[structopt(required = true)]
     command: Vec<String>,
