@@ -17,27 +17,27 @@ struct CLIArgs {
     nanos: bool,
 
     /// Set stdin for the spawned process
-    #[structopt(short = "i", long, conflicts_with = "stdin_null")]
+    #[structopt(short = "i", long)]
     stdin: Option<String>,
 
     /// Set stdout for the spawned process
-    #[structopt(short = "o", long, conflicts_with = "stdout_null")]
+    #[structopt(short = "o", long)]
     stdout: Option<String>,
 
     /// Set stderr for the spawned process
-    #[structopt(short = "e", long, conflicts_with = "stderr_null")]
+    #[structopt(short = "e", long)]
     stderr: Option<String>,
 
     /// Set stdin to null
-    #[structopt(long)]
+    #[structopt(long, conflicts_with = "stdin")]
     stdin_null: bool,
 
     /// Set stdout to null
-    #[structopt(long)]
+    #[structopt(long, conflicts_with = "stdout")]
     stdout_null: bool,
 
     /// Set stderr to null
-    #[structopt(long)]
+    #[structopt(long, conflicts_with = "stderr")]
     stderr_null: bool,
 
     /// The command to spawn followed by its arguments
