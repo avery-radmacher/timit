@@ -28,30 +28,47 @@ struct CLIArgs {
     #[structopt(short = "e", long)]
     stderr: Option<String>,
 
+    /// Set stdin to null
+    #[structopt(long, conflicts_with = "stdin")]
+    stdin_null: bool,
+
+    /// Set stdout to null
+    #[structopt(long, conflicts_with = "stdout")]
+    stdout_null: bool,
+
+    /// Set stderr to null
+    #[structopt(long, conflicts_with = "stderr")]
+    stderr_null: bool,
+
     /// The command to spawn followed by its arguments
     #[structopt(required = true)]
     command: Vec<String>,
 }
 
 impl CLIArgs {
+    fn to_io_stream(null: bool, file: Option<String>, is_for_stdin: bool) -> io::Result<IOStream> {
+        if null {
+            Ok(IOStream::Null)
+        } else if let Some(file) = file {
+            let stream = if is_for_stdin {
+                File::open(file)?
+            } else {
+                File::create(file)?
+            };
+            Ok(IOStream::File(stream))
+        } else {
+            Ok(IOStream::Inherit)
+        }
+    }
+
     pub fn to_args(self) -> io::Result<(Args, IOArgs)> {
-        let stdin = self
-            .stdin
-            .and_then(|name| Some(File::open(name)))
-            .transpose()?;
-        let stdout = self
-            .stdout
-            .and_then(|name| Some(File::create(name)))
-            .transpose()?;
-        let stderr = self
-            .stderr
-            .and_then(|name| Some(File::create(name)))
-            .transpose()?;
+        let stdin = CLIArgs::to_io_stream(self.stdin_null, self.stdin, true)?;
+        let stdout = CLIArgs::to_io_stream(self.stdout_null, self.stdout, false)?;
+        let stderr = CLIArgs::to_io_stream(self.stderr_null, self.stderr, false)?;
         let mut command_iter = self.command.into_iter();
         Ok((
             Args {
                 display_nanos: self.nanos,
-                borrow_stdio: true,
                 command: command_iter.next().unwrap(), // failsafe due to #[structopt(required = true)]
                 command_args: command_iter.collect(),
             },
